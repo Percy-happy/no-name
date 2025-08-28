@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>0代码 HTML & PHP 编辑器</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/htmlmixed/htmlmixed.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/xml/xml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/php/php.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        header {
+            background-color: #282c34;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+        .editor-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            margin: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .editor-header {
+            background-color: #282c34;
+            color: white;
+            padding: 0.5rem 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .editor-header select {
+            background-color: #444;
+            color: white;
+            border: none;
+            padding: 0.3rem;
+            border-radius: 4px;
+        }
+        .editor-content {
+            flex: 1;
+            overflow: auto;
+        }
+        .button-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+        button {
+            background-color: #61dafb;
+            color: #282c34;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #4fa8c4;
+        }
+        .preview-container {
+            flex: 1;
+            margin: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .preview-header {
+            background-color: #282c34;
+            color: white;
+            padding: 0.5rem 1rem;
+        }
+        .preview-content {
+            flex: 1;
+            overflow: auto;
+            background-color: white;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>0代码 HTML & PHP 编辑器</h1>
+    </header>
+    <div class="container">
+        <div class="editor-container">
+            <div class="editor-header">
+                <div>代码编辑器</div>
+                <div class="button-group">
+                    <select id="language-select">
+                        <option value="htmlmixed">HTML</option>
+                        <option value="php">PHP</option>
+                    </select>
+                    <button id="save-btn">保存</button>
+                    <button id="preview-btn">预览</button>
+                </div>
+            </div>
+            <div class="editor-content">
+                <textarea id="code-editor"><!-- 在这里编辑你的HTML或PHP代码 -->
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网页</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <h1>欢迎来到我的网页</h1>
+    <p>这是一个使用0代码编辑器创建的HTML页面。</p>
+</body>
+</html>
+</textarea>
+            </div>
+        </div>
+        <div class="preview-container">
+            <div class="preview-header">预览</div>
+            <div class="preview-content">
+                <iframe id="preview-frame"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 初始化代码编辑器
+        const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+            mode: "htmlmixed",
+            theme: "dracula",
+            lineNumbers: true,
+            autoCloseTags: true,
+            matchBrackets: true,
+            indentUnit: 4,
+            tabSize: 4,
+            indentWithTabs: false,
+            lineWrapping: true
+        });
+
+        // 调整编辑器高度以适应容器
+        function resizeEditor() {
+            const container = document.querySelector('.editor-content');
+            editor.setSize('100%', container.clientHeight);
+        }
+
+        // 初始调整和窗口大小改变时调整
+        window.addEventListener('resize', resizeEditor);
+        setTimeout(resizeEditor, 100);
+
+        // 语言选择切换
+        document.getElementById('language-select').addEventListener('change', function() {
+            editor.setOption('mode', this.value);
+        });
+
+        // 预览功能
+        document.getElementById('preview-btn').addEventListener('click', function() {
+            const code = editor.getValue();
+            const iframe = document.getElementById('preview-frame');
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            
+            if (document.getElementById('language-select').value === 'php') {
+                // PHP代码预览 - 由于浏览器安全限制，我们无法直接在浏览器中运行PHP
+                // 这里只是显示代码作为文本
+                iframeDoc.open();
+                iframeDoc.write('<pre>' + escapeHtml(code) + '</pre>');
+                iframeDoc.close();
+            } else {
+                // HTML代码预览
+                iframeDoc.open();
+                iframeDoc.write(code);
+                iframeDoc.close();
+            }
+        });
+
+        // 保存功能
+        document.getElementById('save-btn').addEventListener('click', function() {
+            const code = editor.getValue();
+            const language = document.getElementById('language-select').value;
+            const extension = language === 'php' ? 'php' : 'html';
+            
+            const blob = new Blob([code], {type: 'text/plain'});
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `document.${extension}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+
+        // HTML转义函数
+        function escapeHtml(text) {
+            return text
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // 初始预览
+        document.getElementById('preview-btn').click();
+    </script>
+</body>
+</html>
