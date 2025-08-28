@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>0代码 HTML & PHP 编辑器</title>
+    <title>0代码开发平台 | 无需编程即可创建网站</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/theme/dracula.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/codemirror.min.js"></script>
@@ -12,6 +12,123 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/javascript/javascript.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/css/css.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.2/mode/php/php.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/draggabilly/2.3.0/draggabilly.pkgd.min.js"></script>
+    <style>
+        /* 属性编辑器样式 */
+        #property-editor {
+            position: fixed;
+            top: 20px;
+            right: -300px;
+            width: 280px;
+            height: calc(100vh - 40px);
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 8px 0 0 8px;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            overflow-y: auto;
+            transition: right 0.3s ease;
+            z-index: 1000;
+        }
+        
+        #property-editor.show {
+            right: 0;
+        }
+        
+        .property-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .property-header h3 {
+            margin: 0;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        #property-close-btn {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #property-close-btn:hover {
+            color: #333;
+        }
+        
+        .property-group {
+            margin-bottom: 20px;
+        }
+        
+        .property-group h4 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #666;
+            font-weight: normal;
+        }
+        
+        .property-item {
+            margin-bottom: 12px;
+        }
+        
+        .property-item label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #666;
+        }
+        
+        .property-item input,
+        .property-item select,
+        .property-item textarea {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            box-sizing: border-box;
+        }
+        
+        .property-item input[type="color"] {
+            height: 30px;
+            padding: 2px;
+        }
+        
+        .property-item input:focus,
+        .property-item select:focus,
+        .property-item textarea:focus {
+            outline: none;
+            border-color: #61dafb;
+        }
+        
+        /* 响应式调整 */
+        @media (max-width: 768px) {
+            #property-editor {
+                width: 100%;
+                right: -100%;
+                height: 50vh;
+                bottom: 0;
+                top: auto;
+                border-radius: 8px 8px 0 0;
+            }
+            
+            #property-editor.show {
+                right: 0;
+            }
+        }
+    </style>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -21,6 +138,7 @@
             display: flex;
             flex-direction: column;
             height: 100vh;
+            overflow: hidden;
         }
         header {
             background-color: #282c34;
@@ -37,6 +155,203 @@
             display: flex;
             flex: 1;
             overflow: hidden;
+        }
+        
+        .components-panel {
+            width: 250px;
+            background-color: #fff;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .components-panel-header {
+            padding: 1rem;
+            background-color: #282c34;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .components-category {
+            margin: 1rem;
+        }
+        
+        .components-category h3 {
+            margin-top: 0;
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        
+        .component-item {
+            padding: 0.8rem;
+            margin-bottom: 0.5rem;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: grab;
+            user-select: none;
+            transition: all 0.2s;
+        }
+        
+        .component-item:hover {
+            background-color: #e8e8e8;
+            border-color: #61dafb;
+        }
+        
+        .component-item:active {
+            cursor: grabbing;
+        }
+        
+        .templates-panel {
+            width: 250px;
+            background-color: #fff;
+            border-left: 1px solid #ddd;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .templates-panel-header {
+            padding: 1rem;
+            background-color: #282c34;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .template-item {
+            padding: 0.8rem;
+            margin: 0.5rem 1rem;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .template-item:hover {
+            background-color: #e8e8e8;
+            border-color: #61dafb;
+        }
+        
+        .property-editor {
+            position: fixed;
+            right: -400px;
+            top: 0;
+            width: 400px;
+            height: 100vh;
+            background-color: #fff;
+            box-shadow: -2px 0 8px rgba(0,0,0,0.1);
+            transition: right 0.3s;
+            z-index: 100;
+            overflow-y: auto;
+        }
+        
+        .property-editor.show {
+            right: 0;
+        }
+        
+        .property-editor-header {
+            padding: 1rem;
+            background-color: #282c34;
+            color: white;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .property-editor-close {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .property-group {
+            margin: 1rem;
+        }
+        
+        .property-group h3 {
+            margin-top: 0;
+            font-size: 0.9rem;
+            color: #666;
+            text-transform: uppercase;
+            margin-bottom: 0.5rem;
+        }
+        
+        .property-item {
+            margin-bottom: 1rem;
+        }
+        
+        .property-item label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+            color: #333;
+        }
+        
+        .property-item input[type="text"],
+        .property-item input[type="number"],
+        .property-item select,
+        .property-item textarea {
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        .property-item textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        .toolbar {
+            background-color: #fff;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .toolbar-buttons {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .mobile-tabs {
+            display: none;
+        }
+        
+        .tab {
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            border-radius: 4px 4px 0 0;
+        }
+        
+        .tab.active {
+            background-color: #fff;
+            font-weight: bold;
+        }
+        
+        @media (max-width: 1200px) {
+            .components-panel,
+            .templates-panel {
+                display: none;
+            }
+            
+            .mobile-tabs {
+                display: flex;
+                background-color: #fff;
+                border-bottom: 1px solid #ddd;
+            }
         }
         .editor-container {
             flex: 1;
@@ -110,55 +425,162 @@
             .container {
                 flex-direction: column;
             }
+            
+            .editor-container,
+            .preview-container {
+                margin: 0.5rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .property-editor {
+                width: 100vw;
+                right: -100vw;
+            }
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>0代码 HTML & PHP 编辑器</h1>
+        <h1>0代码开发平台</h1>
     </header>
+    
+    <div class="mobile-tabs">
+        <div class="tab active" data-tab="editor">编辑器</div>
+        <div class="tab" data-tab="components">组件库</div>
+        <div class="tab" data-tab="templates">模板库</div>
+    </div>
+    
+    <div class="toolbar">
+        <div>可视化拖拽开发，无需编写代码</div>
+        <div class="toolbar-buttons">
+            <button id="undo-btn">撤销</button>
+            <button id="redo-btn">重做</button>
+            <button id="clear-btn">清空</button>
+        </div>
+    </div>
+    
     <div class="container">
+        <!-- 组件库面板 -->
+        <div class="components-panel">
+            <div class="components-panel-header">组件库</div>
+            
+            <div class="components-category">
+                <h3>基础元素</h3>
+                <div class="component-item" data-component="heading">标题</div>
+                <div class="component-item" data-component="paragraph">段落文本</div>
+                <div class="component-item" data-component="image">图片</div>
+                <div class="component-item" data-component="button">按钮</div>
+                <div class="component-item" data-component="divider">分隔线</div>
+            </div>
+            
+            <div class="components-category">
+                <h3>表单元素</h3>
+                <div class="component-item" data-component="text-input">文本输入框</div>
+                <div class="component-item" data-component="textarea">多行文本</div>
+                <div class="component-item" data-component="checkbox">复选框</div>
+                <div class="component-item" data-component="radio">单选框</div>
+                <div class="component-item" data-component="select">下拉选择框</div>
+                <div class="component-item" data-component="submit-button">提交按钮</div>
+            </div>
+            
+            <div class="components-category">
+                <h3>布局组件</h3>
+                <div class="component-item" data-component="container">容器</div>
+                <div class="component-item" data-component="row">行布局</div>
+                <div class="component-item" data-component="column">列布局</div>
+                <div class="component-item" data-component="card">卡片</div>
+                <div class="component-item" data-component="navbar">导航栏</div>
+            </div>
+        </div>
+        <!-- 主编辑器区域 -->
         <div class="editor-container">
             <div class="editor-header">
-                <div>代码编辑器</div>
+                <div>可视化设计器</div>
                 <div class="button-group">
                     <select id="language-select">
                         <option value="htmlmixed">HTML</option>
                         <option value="php">PHP</option>
                     </select>
+                    <button id="code-view-btn">代码视图</button>
                     <button id="save-btn">保存</button>
                     <button id="preview-btn">预览</button>
+                    <button id="property-btn">属性编辑</button>
                 </div>
             </div>
-            <div class="editor-content">
-                <textarea id="code-editor"><!-- 在这里编辑你的HTML或PHP代码 -->
+            
+            <!-- 可视化设计区域 -->
+            <div class="editor-content" style="background-color: white;">
+                <div id="visual-editor" style="min-height: 100%; padding: 20px;">
+                    <!-- 可视化设计区域，组件将被拖放到这里 -->
+                    <div class="component" data-type="heading" contenteditable="true">欢迎来到我的网站</div>
+                    <div class="component" data-type="paragraph" contenteditable="true">这是一个使用0代码开发平台创建的网站。您可以直接在页面上编辑文字，或者从左侧组件库拖拽添加新的元素。</div>
+                    <div class="component" data-type="image">
+                        <img src="https://picsum.photos/800/400" alt="示例图片" style="max-width: 100%;">
+                    </div>
+                    <div class="component" data-type="button">
+                        <button>了解更多</button>
+                    </div>
+                </div>
+                
+                <!-- 代码编辑区域（默认隐藏） -->
+                <div id="code-editor-container" style="display: none; height: 100%;">
+                    <textarea id="code-editor"><!-- 代码将自动生成 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>我的网页</title>
+    <title>我的网站 - 使用0代码开发平台创建</title>
     <style>
         body {
             font-family: Arial, sans-serif;
-            max-width: 800px;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #333;
+            margin-top: 0;
+        }
+        .container {
+            max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
         }
-        h1 {
-            color: #333;
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
         }
-        p {
-            line-height: 1.6;
+        .btn:hover {
+            background-color: #45a049;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
         }
     </style>
 </head>
 <body>
-    <h1>欢迎来到我的网页</h1>
-    <p>这是一个使用0代码编辑器创建的HTML页面。</p>
+    <div class="container">
+        <h1>欢迎来到我的网站</h1>
+        <p>这是一个使用0代码开发平台创建的网站。您可以直接在页面上编辑文字，或者从左侧组件库拖拽添加新的元素。</p>
+        <img src="https://picsum.photos/800/400" alt="示例图片">
+        <a href="#" class="btn">了解更多</a>
+    </div>
 </body>
 </html>
-</textarea>
+                    </textarea>
+                </div>
+            </div>
             </div>
         </div>
         <div class="preview-container">
@@ -168,10 +590,96 @@
             </div>
         </div>
     </div>
+    
+    <!-- 属性编辑器 -->
+    <div id="property-editor">
+        <div class="property-header">
+            <h3>属性编辑器</h3>
+            <button id="property-close-btn">×</button>
+        </div>
+        
+        <div class="property-group">
+            <h4>基本属性</h4>
+            <div class="property-item">
+                <label for="property-id">ID</label>
+                <input type="text" id="property-id" placeholder="组件ID">
+            </div>
+            <div class="property-item">
+                <label for="property-class">类名</label>
+                <input type="text" id="property-class" placeholder="CSS类名">
+            </div>
+        </div>
+        
+        <div class="property-group">
+            <h4>样式属性</h4>
+            <div class="property-item">
+                <label for="property-color">文字颜色</label>
+                <input type="color" id="property-color" value="#000000">
+            </div>
+            <div class="property-item">
+                <label for="property-font-size">字体大小 (px)</label>
+                <input type="number" id="property-font-size" min="8" max="72" value="16">
+            </div>
+            <div class="property-item">
+                <label for="property-background">背景颜色</label>
+                <input type="color" id="property-background" value="#ffffff">
+            </div>
+            <div class="property-item">
+                <label for="property-padding">内边距</label>
+                <input type="text" id="property-padding" placeholder="10px" value="0px">
+            </div>
+            <div class="property-item">
+                <label for="property-margin">外边距</label>
+                <input type="text" id="property-margin" placeholder="10px" value="0px">
+            </div>
+        </div>
+        
+        <!-- 特定组件类型的属性将动态添加到这里 -->
+        <div id="specific-properties"></div>
+    </div>
 
     <script>
+        // 历史记录管理
+        const history = {
+            states: [],
+            index: -1,
+            
+            push(state) {
+                // 如果我们在历史记录的中间，清除后面的历史
+                if (this.index < this.states.length - 1) {
+                    this.states = this.states.slice(0, this.index + 1);
+                }
+                
+                // 保存状态
+                this.states.push(state);
+                this.index = this.states.length - 1;
+                
+                // 限制历史记录数量
+                if (this.states.length > 50) {
+                    this.states.shift();
+                    this.index--;
+                }
+            },
+            
+            undo() {
+                if (this.index > 0) {
+                    this.index--;
+                    return this.states[this.index];
+                }
+                return null;
+            },
+            
+            redo() {
+                if (this.index < this.states.length - 1) {
+                    this.index++;
+                    return this.states[this.index];
+                }
+                return null;
+            }
+        };
+
         // 初始化代码编辑器
-        const editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
+        const codeEditor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
             mode: "htmlmixed",
             theme: "dracula",
             lineNumbers: true,
@@ -183,30 +691,71 @@
             lineWrapping: true
         });
 
+        // 当前视图模式（visual 或 code）
+        let currentView = 'visual';
+        
+        // 当前选中的组件
+        let selectedComponent = null;
+
         // 调整编辑器高度以适应容器
         function resizeEditor() {
             const container = document.querySelector('.editor-content');
-            editor.setSize('100%', container.clientHeight);
+            codeEditor.setSize('100%', container.clientHeight);
         }
 
         // 初始调整和窗口大小改变时调整
         window.addEventListener('resize', resizeEditor);
         setTimeout(resizeEditor, 100);
 
+        // 切换视图模式（可视化/代码）
+        document.getElementById('code-view-btn').addEventListener('click', function() {
+            const visualEditor = document.getElementById('visual-editor');
+            const codeContainer = document.getElementById('code-editor-container');
+            const btn = document.getElementById('code-view-btn');
+            
+            if (currentView === 'visual') {
+                // 保存当前可视化内容到代码编辑器
+                saveVisualToCode();
+                
+                // 切换到代码视图
+                visualEditor.style.display = 'none';
+                codeContainer.style.display = 'block';
+                btn.textContent = '可视化视图';
+                currentView = 'code';
+            } else {
+                // 切换到可视化视图
+                visualEditor.style.display = 'block';
+                codeContainer.style.display = 'none';
+                btn.textContent = '代码视图';
+                currentView = 'visual';
+                
+                // 从代码更新可视化
+                updateVisualFromCode();
+            }
+        });
+
         // 语言选择切换
         document.getElementById('language-select').addEventListener('change', function() {
-            editor.setOption('mode', this.value);
+            codeEditor.setOption('mode', this.value);
         });
 
         // 预览功能
-        document.getElementById('preview-btn').addEventListener('click', function() {
-            const code = editor.getValue();
+        function updatePreview() {
+            let code;
+            
+            if (currentView === 'visual') {
+                // 从可视化内容生成代码
+                code = generateCodeFromVisual();
+            } else {
+                // 直接使用代码编辑器的内容
+                code = codeEditor.getValue();
+            }
+            
             const iframe = document.getElementById('preview-frame');
             const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
             
             if (document.getElementById('language-select').value === 'php') {
                 // PHP代码预览 - 由于浏览器安全限制，我们无法直接在浏览器中运行PHP
-                // 这里只是显示代码作为文本
                 iframeDoc.open();
                 iframeDoc.write('<pre>' + escapeHtml(code) + '</pre>');
                 iframeDoc.close();
@@ -216,20 +765,36 @@
                 iframeDoc.write(code);
                 iframeDoc.close();
             }
-        });
+        }
+
+        // 点击预览按钮时更新预览
+        document.getElementById('preview-btn').addEventListener('click', updatePreview);
 
         // 保存功能
         document.getElementById('save-btn').addEventListener('click', function() {
-            const code = editor.getValue();
+            let code;
+            
+            if (currentView === 'visual') {
+                // 从可视化内容生成代码
+                code = generateCodeFromVisual();
+            } else {
+                // 直接使用代码编辑器的内容
+                code = codeEditor.getValue();
+            }
+            
             const language = document.getElementById('language-select').value;
             const extension = language === 'php' ? 'php' : 'html';
+            
+            // 询问用户文件名
+            const fileName = prompt('请输入文件名:', `document.${extension}`);
+            if (!fileName) return;
             
             const blob = new Blob([code], {type: 'text/plain'});
             const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a');
             a.href = url;
-            a.download = `document.${extension}`;
+            a.download = fileName;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -246,8 +811,628 @@
                 .replace(/'/g, "&#039;");
         }
 
-        // 初始预览
-        document.getElementById('preview-btn').click();
+        // 从可视化内容生成HTML代码
+        function generateCodeFromVisual() {
+            const visualContent = document.getElementById('visual-editor').innerHTML;
+            
+            const htmlCode = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的网站 - 使用0代码开发平台创建</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+        h1, h2, h3, h4, h5, h6 {
+            color: #333;
+            margin-top: 0;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+        .component {
+            margin-bottom: 20px;
+        }
+        .component[data-type="heading"] {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .component[data-type="paragraph"] {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        ${visualContent}
+    </div>
+</body>
+</html>`;
+            
+            return htmlCode;
+        }
+
+        // 从代码更新可视化视图
+        function updateVisualFromCode() {
+            const code = codeEditor.getValue();
+            // 这里简化处理，实际应用中需要更复杂的HTML解析
+            try {
+                // 创建一个临时div来解析HTML
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = code;
+                
+                // 获取body内容
+                const bodyContent = tempDiv.querySelector('body');
+                if (bodyContent) {
+                    const container = bodyContent.querySelector('.container') || bodyContent;
+                    document.getElementById('visual-editor').innerHTML = container.innerHTML;
+                }
+            } catch (e) {
+                console.error('解析HTML失败:', e);
+            }
+        }
+
+        // 保存可视化内容到代码编辑器
+        function saveVisualToCode() {
+            const htmlCode = generateCodeFromVisual();
+            codeEditor.setValue(htmlCode);
+        }
+
+        // 组件拖拽功能
+        const componentItems = document.querySelectorAll('.component-item');
+        componentItems.forEach(item => {
+            item.addEventListener('dragstart', function(e) {
+                e.dataTransfer.setData('text/plain', this.getAttribute('data-component'));
+            });
+        });
+
+        // 可视化编辑器区域允许放置
+        const visualEditor = document.getElementById('visual-editor');
+        visualEditor.addEventListener('dragover', function(e) {
+            e.preventDefault();
+        });
+
+        visualEditor.addEventListener('drop', function(e) {
+            e.preventDefault();
+            const componentType = e.dataTransfer.getData('text/plain');
+            addComponent(componentType);
+            
+            // 保存历史记录
+            saveHistory();
+            
+            // 更新预览
+            updatePreview();
+        });
+
+        // 添加组件到可视化编辑器
+        function addComponent(type) {
+            let componentHTML = '';
+            
+            switch (type) {
+                case 'heading':
+                    componentHTML = '<div class="component" data-type="heading" contenteditable="true">新标题</div>';
+                    break;
+                case 'paragraph':
+                    componentHTML = '<div class="component" data-type="paragraph" contenteditable="true">这是一段新的文本内容。</div>';
+                    break;
+                case 'image':
+                    componentHTML = '<div class="component" data-type="image"><img src="https://picsum.photos/600/400" alt="图片" style="max-width: 100%;"></div>';
+                    break;
+                case 'button':
+                    componentHTML = '<div class="component" data-type="button"><button>点击按钮</button></div>';
+                    break;
+                case 'divider':
+                    componentHTML = '<div class="component" data-type="divider"><hr></div>';
+                    break;
+                case 'text-input':
+                    componentHTML = '<div class="component" data-type="text-input"><input type="text" placeholder="请输入文本"></div>';
+                    break;
+                case 'textarea':
+                    componentHTML = '<div class="component" data-type="textarea"><textarea placeholder="请输入多行文本" rows="4"></textarea></div>';
+                    break;
+                case 'checkbox':
+                    componentHTML = '<div class="component" data-type="checkbox"><label><input type="checkbox"> 选项</label></div>';
+                    break;
+                case 'radio':
+                    componentHTML = '<div class="component" data-type="radio"><label><input type="radio" name="radio-group"> 选项1</label><br><label><input type="radio" name="radio-group"> 选项2</label></div>';
+                    break;
+                case 'select':
+                    componentHTML = '<div class="component" data-type="select"><select><option value="1">选项1</option><option value="2">选项2</option></select></div>';
+                    break;
+                case 'submit-button':
+                    componentHTML = '<div class="component" data-type="submit-button"><button type="submit">提交</button></div>';
+                    break;
+                case 'container':
+                    componentHTML = '<div class="component" data-type="container" style="border: 1px dashed #ccc; padding: 20px;">容器内容</div>';
+                    break;
+                case 'row':
+                    componentHTML = '<div class="component" data-type="row" style="display: flex; gap: 20px;"><div style="flex: 1; border: 1px dashed #ccc; padding: 10px;">列1</div><div style="flex: 1; border: 1px dashed #ccc; padding: 10px;">列2</div></div>';
+                    break;
+                case 'column':
+                    componentHTML = '<div class="component" data-type="column" style="display: flex; flex-direction: column; gap: 10px;"><div style="border: 1px dashed #ccc; padding: 10px;">行1</div><div style="border: 1px dashed #ccc; padding: 10px;">行2</div></div>';
+                    break;
+                case 'card':
+                    componentHTML = '<div class="component" data-type="card" style="border: 1px solid #ddd; border-radius: 4px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);"><h3>卡片标题</h3><p>卡片内容</p></div>';
+                    break;
+                case 'navbar':
+                    componentHTML = '<div class="component" data-type="navbar" style="background-color: #333; color: white; padding: 10px;"><div style="display: flex; gap: 20px;"><a href="#" style="color: white; text-decoration: none;">首页</a><a href="#" style="color: white; text-decoration: none;">关于我们</a><a href="#" style="color: white; text-decoration: none;">联系我们</a></div></div>';
+                    break;
+            }
+            
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = componentHTML;
+            const newComponent = tempDiv.firstElementChild;
+            
+            // 添加点击选择事件
+            newComponent.addEventListener('click', function(e) {
+                e.stopPropagation();
+                selectComponent(this);
+            });
+            
+            // 添加右键菜单支持
+            newComponent.addEventListener('contextmenu', function(e) {
+                e.preventDefault();
+                selectComponent(this);
+                showContextMenu(e.clientX, e.clientY);
+            });
+            
+            visualEditor.appendChild(newComponent);
+        }
+
+        // 选择组件
+        function selectComponent(component) {
+            // 取消之前的选择
+            if (selectedComponent) {
+                selectedComponent.style.outline = 'none';
+            }
+            
+            // 选择新组件
+            selectedComponent = component;
+            component.style.outline = '2px solid #61dafb';
+            
+            // 更新属性编辑器
+            updatePropertyEditor(component);
+        }
+
+        // 更新属性编辑器
+        function updatePropertyEditor(component) {
+            document.getElementById('property-id').value = component.id || '';
+            document.getElementById('property-class').value = component.className || '';
+            
+            // 获取计算样式
+            const style = window.getComputedStyle(component);
+            document.getElementById('property-color').value = style.color;
+            document.getElementById('property-font-size').value = parseInt(style.fontSize);
+            document.getElementById('property-background').value = style.backgroundColor;
+            document.getElementById('property-padding').value = style.padding;
+            document.getElementById('property-margin').value = style.margin;
+            
+            // 根据组件类型显示特定属性
+            const specificProps = document.getElementById('specific-properties');
+            specificProps.innerHTML = '';
+            
+            const componentType = component.getAttribute('data-type');
+            
+            // 为特定类型的组件添加额外属性
+            if (componentType === 'image' && component.querySelector('img')) {
+                const img = component.querySelector('img');
+                const imgSrcGroup = document.createElement('div');
+                imgSrcGroup.className = 'property-group';
+                imgSrcGroup.innerHTML = `
+                    <h3>图片属性</h3>
+                    <div class="property-item">
+                        <label for="property-img-src">图片地址</label>
+                        <input type="text" id="property-img-src" value="${img.src}">
+                    </div>
+                    <div class="property-item">
+                        <label for="property-img-alt">替代文本</label>
+                        <input type="text" id="property-img-alt" value="${img.alt || ''}">
+                    </div>
+                `;
+                specificProps.appendChild(imgSrcGroup);
+                
+                // 添加事件监听器
+                document.getElementById('property-img-src').addEventListener('input', function() {
+                    img.src = this.value;
+                    updatePreview();
+                });
+                
+                document.getElementById('property-img-alt').addEventListener('input', function() {
+                    img.alt = this.value;
+                    updatePreview();
+                });
+            } else if (componentType === 'button' || componentType === 'submit-button') {
+                const button = component.querySelector('button');
+                if (button) {
+                    const buttonGroup = document.createElement('div');
+                    buttonGroup.className = 'property-group';
+                    buttonGroup.innerHTML = `
+                        <h3>按钮属性</h3>
+                        <div class="property-item">
+                            <label for="property-button-text">按钮文本</label>
+                            <input type="text" id="property-button-text" value="${button.textContent}">
+                        </div>
+                        <div class="property-item">
+                            <label for="property-button-bg">背景颜色</label>
+                            <input type="text" id="property-button-bg" value="${window.getComputedStyle(button).backgroundColor}">
+                        </div>
+                    `;
+                    specificProps.appendChild(buttonGroup);
+                    
+                    // 添加事件监听器
+                    document.getElementById('property-button-text').addEventListener('input', function() {
+                        button.textContent = this.value;
+                        updatePreview();
+                    });
+                    
+                    document.getElementById('property-button-bg').addEventListener('input', function() {
+                        button.style.backgroundColor = this.value;
+                        updatePreview();
+                    });
+                }
+            }
+        }
+
+        // 属性编辑器显示/隐藏
+        document.getElementById('property-btn').addEventListener('click', function() {
+            document.getElementById('property-editor').classList.toggle('show');
+        });
+
+        document.getElementById('property-close-btn').addEventListener('click', function() {
+            document.getElementById('property-editor').classList.remove('show');
+        });
+
+        // 属性编辑器输入事件
+        const propertyInputs = document.querySelectorAll('#property-editor input, #property-editor select, #property-editor textarea');
+        propertyInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                if (!selectedComponent) return;
+                
+                const propertyName = this.id.replace('property-', '');
+                
+                switch (propertyName) {
+                    case 'id':
+                        selectedComponent.id = this.value;
+                        break;
+                    case 'class':
+                        selectedComponent.className = this.value;
+                        break;
+                    case 'color':
+                        selectedComponent.style.color = this.value;
+                        break;
+                    case 'font-size':
+                        selectedComponent.style.fontSize = this.value + 'px';
+                        break;
+                    case 'background':
+                        selectedComponent.style.backgroundColor = this.value;
+                        break;
+                    case 'padding':
+                        selectedComponent.style.padding = this.value;
+                        break;
+                    case 'margin':
+                        selectedComponent.style.margin = this.value;
+                        break;
+                }
+                
+                // 更新预览
+                updatePreview();
+            });
+        });
+
+        // 点击空白处取消选择
+        visualEditor.addEventListener('click', function() {
+            if (selectedComponent) {
+                selectedComponent.style.outline = 'none';
+                selectedComponent = null;
+            }
+        });
+
+        // 模板选择
+        const templateItems = document.querySelectorAll('.template-item');
+        templateItems.forEach(item => {
+            item.addEventListener('click', function() {
+                const templateType = this.getAttribute('data-template');
+                loadTemplate(templateType);
+            });
+        });
+
+        // 加载模板
+        function loadTemplate(type) {
+            let templateHTML = '';
+            
+            switch (type) {
+                case 'simple':
+                    templateHTML = `
+                        <div class="component" data-type="heading" contenteditable="true">我的个人网站</div>
+                        <div class="component" data-type="paragraph" contenteditable="true">欢迎访问我的个人网站。这里是一些关于我的信息。</div>
+                        <div class="component" data-type="image"><img src="https://picsum.photos/800/400" alt="我的照片" style="max-width: 100%;"></div>
+                        <div class="component" data-type="paragraph" contenteditable="true">我喜欢学习新事物，探索新技术。</div>
+                        <div class="component" data-type="button"><button>联系我</button></div>
+                    `;
+                    break;
+                case 'portfolio':
+                    templateHTML = `
+                        <div class="component" data-type="heading" contenteditable="true">我的作品集</div>
+                        <div class="component" data-type="paragraph" contenteditable="true">这是我最近完成的一些项目。</div>
+                        <div class="component" data-type="row">
+                            <div style="flex: 1;">
+                                <div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=1" alt="项目1" style="max-width: 100%;"></div>
+                                <div class="component" data-type="heading" style="font-size: 1.5rem;" contenteditable="true">项目1</div>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=2" alt="项目2" style="max-width: 100%;"></div>
+                                <div class="component" data-type="heading" style="font-size: 1.5rem;" contenteditable="true">项目2</div>
+                            </div>
+                        </div>
+                        <div class="component" data-type="row">
+                            <div style="flex: 1;">
+                                <div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=3" alt="项目3" style="max-width: 100%;"></div>
+                                <div class="component" data-type="heading" style="font-size: 1.5rem;" contenteditable="true">项目3</div>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=4" alt="项目4" style="max-width: 100%;"></div>
+                                <div class="component" data-type="heading" style="font-size: 1.5rem;" contenteditable="true">项目4</div>
+                            </div>
+                        </div>
+                    `;
+                    break;
+                case 'blog':
+                    templateHTML = `
+                        <div class="component" data-type="navbar">
+                            <div style="display: flex; gap: 20px;">
+                                <a href="#" style="color: white; text-decoration: none;">首页</a>
+                                <a href="#" style="color: white; text-decoration: none;">文章</a>
+                                <a href="#" style="color: white; text-decoration: none;">分类</a>
+                                <a href="#" style="color: white; text-decoration: none;">关于</a>
+                            </div>
+                        </div>
+                        <div class="component" data-type="heading" contenteditable="true">博客文章</div>
+                        <div class="component" data-type="card">
+                            <h3 contenteditable="true">如何开始学习编程</h3>
+                            <p contenteditable="true">编程是一项非常有用的技能，在当今数字化时代尤为重要。本文将分享一些入门编程的建议和资源。</p>
+                            <button>阅读更多</button>
+                        </div>
+                        <div class="component" data-type="card">
+                            <h3 contenteditable="true">10个提升工作效率的技巧</h3>
+                            <p contenteditable="true">在快节奏的工作环境中，提高工作效率至关重要。这里有10个实用技巧可以帮助你更高效地完成工作。</p>
+                            <button>阅读更多</button>
+                        </div>
+                        <div class="component" data-type="card">
+                            <h3 contenteditable="true">健康生活方式指南</h3>
+                            <p contenteditable="true">健康的生活方式不仅能让你感觉更好，还能提高工作效率。本文将分享一些保持健康的简单方法。</p>
+                            <button>阅读更多</button>
+                        </div>
+                    `;
+                    break;
+                case 'business':
+                    templateHTML = `
+                        <div class="component" data-type="navbar">
+                            <div style="display: flex; gap: 20px;">
+                                <a href="#" style="color: white; text-decoration: none;">首页</a>
+                                <a href="#" style="color: white; text-decoration: none;">产品</a>
+                                <a href="#" style="color: white; text-decoration: none;">服务</a>
+                                <a href="#" style="color: white; text-decoration: none;">关于我们</a>
+                                <a href="#" style="color: white; text-decoration: none;">联系我们</a>
+                            </div>
+                        </div>
+                        <div class="component" data-type="heading" contenteditable="true">欢迎来到我们的公司</div>
+                        <div class="component" data-type="paragraph" contenteditable="true">我们提供高质量的产品和服务，满足客户的各种需求。多年来，我们一直致力于为客户创造价值。</div>
+                        <div class="component" data-type="row">
+                            <div style="flex: 1;">
+                                <div class="component" data-type="heading" style="font-size: 1.5rem;" contenteditable="true">我们的产品</div>
+                                <div class="component" data-type="paragraph" contenteditable="true">我们的产品采用最新技术，质量可靠，价格合理。</div>
+                            </div>
+                            <div style="flex: 1;">
+                                <div class="component" data-type="heading" style="font-size: 1.5rem;" contenteditable="true">我们的服务</div>
+                                <div class="component" data-type="paragraph" contenteditable="true">我们提供全方位的服务，从咨询到实施，再到售后支持。</div>
+                            </div>
+                        </div>
+                        <div class="component" data-type="button"><button>联系我们</button></div>
+                    `;
+                    break;
+                case 'contact':
+                    templateHTML = `
+                        <div class="component" data-type="heading" contenteditable="true">联系我们</div>
+                        <div class="component" data-type="paragraph" contenteditable="true">如有任何问题或建议，请通过以下方式联系我们。</div>
+                        <div class="component" data-type="text-input"><label>姓名:</label><input type="text" placeholder="请输入您的姓名"></div>
+                        <div class="component" data-type="text-input"><label>邮箱:</label><input type="email" placeholder="请输入您的邮箱"></div>
+                        <div class="component" data-type="text-input"><label>主题:</label><input type="text" placeholder="请输入主题"></div>
+                        <div class="component" data-type="textarea"><label>消息:</label><textarea placeholder="请输入您的消息" rows="5"></textarea></div>
+                        <div class="component" data-type="submit-button"><button type="submit">发送消息</button></div>
+                    `;
+                    break;
+                case 'gallery':
+                    templateHTML = `
+                        <div class="component" data-type="heading" contenteditable="true">图片画廊</div>
+                        <div class="component" data-type="paragraph" contenteditable="true">这是我们的图片画廊，展示了一些精选作品。</div>
+                        <div class="component" data-type="row">
+                            <div style="flex: 1;"><div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=5" alt="图片1" style="max-width: 100%;"></div></div>
+                            <div style="flex: 1;"><div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=6" alt="图片2" style="max-width: 100%;"></div></div>
+                            <div style="flex: 1;"><div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=7" alt="图片3" style="max-width: 100%;"></div></div>
+                        </div>
+                        <div class="component" data-type="row">
+                            <div style="flex: 1;"><div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=8" alt="图片4" style="max-width: 100%;"></div></div>
+                            <div style="flex: 1;"><div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=9" alt="图片5" style="max-width: 100%;"></div></div>
+                            <div style="flex: 1;"><div class="component" data-type="image"><img src="https://picsum.photos/400/300?random=10" alt="图片6" style="max-width: 100%;"></div></div>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            // 清空编辑器并添加模板内容
+            visualEditor.innerHTML = templateHTML;
+            
+            // 为新添加的组件添加事件监听器
+            const newComponents = visualEditor.querySelectorAll('.component');
+            newComponents.forEach(component => {
+                component.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    selectComponent(this);
+                });
+                
+                component.addEventListener('contextmenu', function(e) {
+                    e.preventDefault();
+                    selectComponent(this);
+                    showContextMenu(e.clientX, e.clientY);
+                });
+            });
+            
+            // 保存历史记录
+            saveHistory();
+            
+            // 更新预览
+            updatePreview();
+        }
+
+        // 显示右键菜单（简化版）
+        function showContextMenu(x, y) {
+            if (!selectedComponent) return;
+            
+            // 简单实现：显示一个确认对话框
+            if (confirm('是否删除这个组件？')) {
+                deleteComponent(selectedComponent);
+            }
+        }
+
+        // 删除组件
+        function deleteComponent(component) {
+            component.remove();
+            selectedComponent = null;
+            
+            // 保存历史记录
+            saveHistory();
+            
+            // 更新预览
+            updatePreview();
+        }
+
+        // 保存历史记录
+        function saveHistory() {
+            const currentState = {
+                visualContent: document.getElementById('visual-editor').innerHTML,
+                codeContent: codeEditor.getValue()
+            };
+            history.push(JSON.stringify(currentState));
+        }
+
+        // 撤销操作
+        document.getElementById('undo-btn').addEventListener('click', function() {
+            const stateStr = history.undo();
+            if (stateStr) {
+                const state = JSON.parse(stateStr);
+                document.getElementById('visual-editor').innerHTML = state.visualContent;
+                codeEditor.setValue(state.codeContent);
+                
+                // 为恢复的组件添加事件监听器
+                const components = document.getElementById('visual-editor').querySelectorAll('.component');
+                components.forEach(component => {
+                    component.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        selectComponent(this);
+                    });
+                });
+                
+                // 更新预览
+                updatePreview();
+            }
+        });
+
+        // 重做操作
+        document.getElementById('redo-btn').addEventListener('click', function() {
+            const stateStr = history.redo();
+            if (stateStr) {
+                const state = JSON.parse(stateStr);
+                document.getElementById('visual-editor').innerHTML = state.visualContent;
+                codeEditor.setValue(state.codeContent);
+                
+                // 为恢复的组件添加事件监听器
+                const components = document.getElementById('visual-editor').querySelectorAll('.component');
+                components.forEach(component => {
+                    component.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        selectComponent(this);
+                    });
+                });
+                
+                // 更新预览
+                updatePreview();
+            }
+        });
+
+        // 清空编辑器
+        document.getElementById('clear-btn').addEventListener('click', function() {
+            if (confirm('确定要清空所有内容吗？')) {
+                document.getElementById('visual-editor').innerHTML = '';
+                codeEditor.setValue('');
+                
+                // 保存历史记录
+                saveHistory();
+                
+                // 更新预览
+                updatePreview();
+            }
+        });
+
+        // 移动端标签切换
+        const tabs = document.querySelectorAll('.mobile-tabs .tab');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                // 移除所有标签的active类
+                tabs.forEach(t => t.classList.remove('active'));
+                
+                // 添加当前标签的active类
+                this.classList.add('active');
+                
+                const tabType = this.getAttribute('data-tab');
+                
+                // 隐藏所有面板
+                document.querySelector('.components-panel').style.display = 'none';
+                document.querySelector('.templates-panel').style.display = 'none';
+                document.querySelector('.editor-container').style.display = 'none';
+                document.querySelector('.preview-container').style.display = 'none';
+                
+                // 显示选中的面板
+                if (tabType === 'editor') {
+                    document.querySelector('.editor-container').style.display = 'flex';
+                    document.querySelector('.preview-container').style.display = 'flex';
+                } else if (tabType === 'components') {
+                    document.querySelector('.components-panel').style.display = 'flex';
+                    document.querySelector('.editor-container').style.display = 'flex';
+                } else if (tabType === 'templates') {
+                    document.querySelector('.templates-panel').style.display = 'flex';
+                    document.querySelector('.editor-container').style.display = 'flex';
+                }
+            });
+        });
+
+        // 初始化
+        saveHistory(); // 保存初始状态
+        updatePreview(); // 初始预览
     </script>
 </body>
 </html>
